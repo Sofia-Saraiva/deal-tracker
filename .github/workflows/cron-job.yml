@@ -3,7 +3,9 @@ name: cron-job
 on:
   schedule:
     - cron: '0 8 * * *'
-
+  
+  workflow_dispatch:
+  
 jobs:
   executar-tarefa:
     runs-on: ubuntu-latest
