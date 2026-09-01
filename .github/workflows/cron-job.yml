@@ -3,9 +3,11 @@ name: cron-job
 on:
   schedule:
     - cron: '0 8 * * *'
-
+  
+  workflow_dispatch:
+  
 jobs:
-  executar-tarefa:
+  run-script:
     runs-on: ubuntu-latest
     steps:
       - name: download code
