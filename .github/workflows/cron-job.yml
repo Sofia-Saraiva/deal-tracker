@@ -9,6 +9,10 @@ on:
 jobs:
   run-script:
     runs-on: ubuntu-latest
+    env:
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_PASS: ${{ secrets.SMTP_PASS }}
+      URL: ${{ secrets.URL }}
     steps:
       - name: download code
         uses: actions/checkout@v6
