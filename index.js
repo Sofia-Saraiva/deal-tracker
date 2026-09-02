@@ -3,7 +3,6 @@ const express = require("express");
 
 const app = express();
 
-
 cron.schedule("0 8 * * *", () => {
     sendEmail();
 });

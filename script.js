@@ -10,6 +10,8 @@ async function webScrapingAmazon() {
     const { data } = await axios.get(url);
     const $ = cheerio.load(data);
 
+    const productName = $('span#productTitle').first().text().trim();
+
     const originalPrice = $('span.a-offscreen').text().trim();
     const originalPriceTrim = (originalPrice.match(/R\$\s?\d{1,3}(?:[.\s]\d{3})*,\d{2}/g) || [])[0] || 'Não encontrado';
 
@@ -26,6 +28,7 @@ async function webScrapingAmazon() {
     }
 
     return {
+      productName,
       originalPrice: originalPriceTrim,
       discount,
       priceNow,
@@ -55,15 +58,19 @@ async function sendEmail() {
   });
 
   const textoEmail = `
+    Product: ${result.productName}
+    
     Original price: ${result.originalPrice}
     Discount: ${result.discount}
     Current price: ${result.priceNow}
+
+    Buy it now: ${process.env.URL}
   `;
 
   const mailOptions = {
     from: process.env.SMTP_USER,
     to: process.env.SMTP_USER,
-    subject: '[DISCOUNT]: Mikasa Bola de Vôlei de Quadra Oficial!!',
+    subject: `[DISCOUNT] ${result.productName}`,
     text: textoEmail,
   };
 
