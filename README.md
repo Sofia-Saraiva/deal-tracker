@@ -4,92 +4,95 @@ Deal tracker for monitoring an Amazon product and sending an email alert when it
 
 ## Overview
 
-This project uses Node.js to:
+This Node.js project:
 
-- access a specific Amazon product URL;
-- extract the original price, discount, and current price using `axios` + `cheerio`;
-- check whether a relevant promotion is available;
-- send an email via SMTP using `nodemailer`;
-- run the check on a daily cron schedule.
+- fetches an Amazon product page;
+- extracts the original price, discount, and current price with `axios` and `cheerio`;
+- sends an email through Gmail SMTP with `nodemailer` when a discount is found;
+- runs automatically through GitHub Actions.
 
-The current project structure is:
+## Project structure
 
-- `script.js`: main scraping and email-sending logic;
-- `index.js`: starts the scheduling with `node-cron` and keeps an Express server running (used only to run the code locally);
-- `.env`: environment variables for email authentication.
+- `script.js`: scrapes the product page and sends the email alert;
+- `.github/workflows/cron-job.yml`: GitHub Actions workflow for the automated check;
+- `.env`: local environment variables. This file must not be committed.
 
-## Current workflow
+## Workflow
 
-1. The project loads the variables from the `.env` file.
-2. `script.js` accesses the Amazon product page.
-3. The HTML is parsed to find:
-   - original price;
-   - discount percentage;
-   - current price.
-4. If a discount is found, the system builds a message and sends an email to the configured address.
-5. `index.js` schedules this check to run automatically at the defined time.
+1. The application reads `URL`, `SMTP_USER`, and `SMTP_PASS` from the environment.
+2. `script.js` requests the configured Amazon product URL.
+3. The response HTML is parsed to find the original price, discount, and current price.
+4. If no discount is found, the process ends without sending an email.
+5. If a discount is found, an email is sent to the configured SMTP user.
 
-## Installation
+## Local setup
+
+Install the dependencies:
 
 ```bash
 npm install
 ```
 
-## Environment setup
-
-Create a `.env` file in the project root with the following variables:
+Create a `.env` file in the project root:
 
 ```env
 SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
+SMTP_PASS=your-gmail-app-password
+URL=https://www.amazon.com/product-url
 ```
 
-> If you are using Gmail, you usually need to generate an app password.
+For Gmail, use an app password instead of your regular account password.
 
-## Running the project
-
-### Immediate check
+### Run an immediate check
 
 ```bash
 node script.js
 ```
 
-This command runs the check immediately and tries to send an email if a discount is found.
+## GitHub Actions workflow
 
-### Scheduled execution
+The workflow is defined in `.github/workflows/cron-job.yml` and runs:
+
+- automatically every day at `08:00 UTC`;
+- manually from the GitHub Actions page through `workflow_dispatch`.
+
+The workflow runs on `ubuntu-latest`, uses Node.js `24`, installs the dependencies, and executes:
 
 ```bash
-node index.js
+npm install
+node script.js
 ```
 
-This command starts the cron job and also runs the Express server on port `1313`.
+### Configure GitHub Secrets
 
-## Notes about the workflow
+The workflow does not use the local `.env` file. Add these repository secrets in **Settings > Secrets and variables > Actions**:
 
-- The cron configured in `index.js` is set to run every day at 08:00:
+| Secret | Value |
+| --- | --- |
+| `SMTP_USER` | Gmail address used to send the alert |
+| `SMTP_PASS` | Gmail app password |
+| `URL` | Full Amazon product URL |
 
-```js
-cron.schedule("0 8 * * *", () => {
-  sendEmail();
-});
+The workflow exposes them to Node.js as environment variables:
+
+```yaml
+
+  SMTP_USER: ${{ secrets.SMTP_USER }}
+  SMTP_PASS: ${{ secrets.SMTP_PASS }}
+  URL: ${{ secrets.URL }}
 ```
 
-- The scraping depends on the current HTML structure of the site, and e-commerce pages can change frequently.
-- To avoid authentication issues, keep SMTP credentials in `.env` and never commit them to Git.
+Do not add quotes or a trailing semicolon to the secret values. Never commit `.env` or credentials to the repository.
+
+## Notes
+
+- The Amazon page structure may change, which can break the CSS selectors used by the scraper.
+- The GitHub Actions cron uses UTC.
 
 ## Main dependencies
 
-- `axios` — HTTP requests
-- `cheerio` — HTML parsing
-- `nodemailer` — email sending
-- `dotenv` — environment variable loading
-- `node-cron` — task scheduling
-- `express` — HTTP server
-
-## Suggested next steps
-
-- allow multiple products to be tracked;
-- save price history to a file or database;
-- send alerts via WhatsApp or Telegram;
-- make the product URL configurable through an environment variable;
-- add better logs and more robust error handling.
+- `axios`: HTTP requests
+- `cheerio`: HTML parsing
+- `dotenv`: local environment variable loading
+- `nodemailer`: email sending
+- `express`: local HTTP server
